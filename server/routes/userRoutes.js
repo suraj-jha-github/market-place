@@ -124,4 +124,30 @@ router.put("/update-user-status/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// refresh token endpoint
+router.post("/refresh-token", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.body.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Create new token with same expiration
+    const token = jwt.sign({ userId: user._id }, process.env.jwt_secret, {
+      expiresIn: "1d",
+    });
+
+    res.send({
+      success: true,
+      message: "Token refreshed successfully",
+      data: token,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 module.exports = router;

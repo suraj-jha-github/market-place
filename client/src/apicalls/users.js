@@ -48,6 +48,18 @@ export const GetAllUsers=async()=>{
     }
 }
 
+// refresh token
+export const RefreshToken=async()=>{
+    try {
+        const response=await axiosInstance.post("/api/users/refresh-token");
+        return response.data;
+        
+    } catch (error) {
+        return error.message;
+        
+    }
+}
+
 // /update usr details 
 export const UpdateUserStatus=async(id,status)=>{
     try {

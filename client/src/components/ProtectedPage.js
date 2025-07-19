@@ -1,6 +1,6 @@
 import { Avatar, Badge, message } from "antd";
 import React, { useEffect, useState } from "react";
-import { GetCurrentUser } from "../apicalls/users";
+import { GetCurrentUser, RefreshToken } from "../apicalls/users";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { SetLoader } from "../redux/loadersSlice";
@@ -15,6 +15,20 @@ function ProtectedPage({ children }) {
   const { user } = useSelector((state) => state.users);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  // Function to refresh token periodically
+  const refreshTokenPeriodically = async () => {
+    try {
+      const response = await RefreshToken();
+      if (response.success) {
+        localStorage.setItem('token', response.data);
+        console.log('Token refreshed successfully');
+      }
+    } catch (error) {
+      console.log('Token refresh failed:', error.message);
+    }
+  };
+
   const validateToken = async () => {
     try {
       dispatch(SetLoader(true));
@@ -23,13 +37,13 @@ function ProtectedPage({ children }) {
       if (response.success) {
         dispatch(SetUser(response.data));
       } else {
+        // Don't show error message here as it will be handled by axios interceptor
         navigate("/login");
-        message.error(response.message);
       }
     } catch (error) {
       dispatch(SetLoader(false));
+      // Don't show error message here as it will be handled by axios interceptor
       navigate("/login");
-      message.error(error.message);
     }
   };
   const getNotifications = async () => {
@@ -40,11 +54,12 @@ function ProtectedPage({ children }) {
       if (response.success) {
         setNotifications(response.data);
       } else {
-        throw new Error(response.message);
+        // Don't throw error here as it will be handled by axios interceptor
+        console.log("Failed to get notifications:", response.message);
       }
     } catch (error) {
-      // dispatch(SetLoader(false));
-      message.error(error.message);
+      // Don't show error message here as it will be handled by axios interceptor
+      console.log("Error getting notifications:", error.message);
     }
   };
 
@@ -56,11 +71,12 @@ function ProtectedPage({ children }) {
       if(response.success){
         getNotifications();
       }else{
-        throw new Error(response.message)
+        // Don't throw error here as it will be handled by axios interceptor
+        console.log("Failed to read notifications:", response.message);
       }
     }catch(error){
-      // dispatch(SetLoader(false));
-      message.error(error.message)
+      // Don't show error message here as it will be handled by axios interceptor
+      console.log("Error reading notifications:", error.message);
     }
   }
 
@@ -68,6 +84,14 @@ function ProtectedPage({ children }) {
     if (localStorage.getItem("token")) {
       validateToken();
       getNotifications();
+      
+      // Set up periodic token refresh (every 12 hours)
+      const tokenRefreshInterval = setInterval(refreshTokenPeriodically, 12 * 60 * 60 * 1000);
+      
+      // Cleanup interval on component unmount
+      return () => {
+        clearInterval(tokenRefreshInterval);
+      };
     } else {
       // message.error("Please login to continue");
       navigate("/login");

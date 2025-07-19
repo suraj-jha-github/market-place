@@ -7,6 +7,6 @@
  connection.on('connected',()=>{
     console.log('mongodb connection success full')
  })
- connection.on('err0or',()=>{
-    console.log('mongodb connection fall')
+ connection.on('error',()=>{
+    console.log('mongodb connection fail')
  })
